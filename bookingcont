@@ -1,0 +1,49 @@
+package com.hashedin.huspark.controller;
+
+import com.hashedin.huspark.dto.BookingRequestDTO;
+import com.hashedin.huspark.dto.BookingResponseDTO;
+import com.hashedin.huspark.service.BookingService;
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+import java.util.List;
+
+@RestController
+@RequestMapping("/api/bookings")
+@RequiredArgsConstructor
+public class BookingController {
+
+    private final BookingService bookingService;
+
+    // Customer: Create a booking
+    @PostMapping
+    public ResponseEntity<BookingResponseDTO> createBooking(@RequestParam String customerEmail,
+                                                            @RequestBody BookingRequestDTO dto) {
+        return ResponseEntity.ok(bookingService.createBooking(customerEmail, dto));
+    }
+
+    // Customer: Get their bookings
+    @GetMapping("/customer")
+    public ResponseEntity<List<BookingResponseDTO>> getCustomerBookings(@RequestParam String email) {
+        return ResponseEntity.ok(bookingService.getCustomerBookings(email));
+    }
+
+    // Provider: Get assigned bookings
+    @GetMapping("/provider")
+    public ResponseEntity<List<BookingResponseDTO>> getProviderBookings(@RequestParam String email) {
+        return ResponseEntity.ok(bookingService.getProviderBookings(email));
+    }
+
+    // Provider/Admin: Update status
+    @PutMapping("/{id}/status")
+    public ResponseEntity<BookingResponseDTO> updateStatus(@PathVariable Long id,
+                                                           @RequestParam String status) {
+        return ResponseEntity.ok(bookingService.updateStatus(id, status));
+    }
+
+    // Admin: View all bookings
+    @GetMapping
+    public ResponseEntity<List<BookingResponseDTO>> getAllBookings() {
+        return ResponseEntity.ok(bookingService.getAllBookings());
+    }
+}
