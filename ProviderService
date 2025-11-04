@@ -1,0 +1,31 @@
+package com.hashedin.huspark.model;
+
+import jakarta.persistence.*;
+import lombok.*;
+import java.math.BigDecimal;
+
+@Entity
+@Table(name = "provider_services")
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
+public class ProviderService {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @ManyToOne(optional = false)
+    @JoinColumn(name = "provider_profile_id")
+    private ProviderProfile provider;
+
+    @ManyToOne(optional = false)
+    @JoinColumn(name = "service_id")
+    private ServiceItem service;
+
+    @Column(nullable = false)
+    private BigDecimal price; // Provider-specific price
+
+    private String availability; // JSON or string like "Mon-Fri 9AM-6PM"
+}
