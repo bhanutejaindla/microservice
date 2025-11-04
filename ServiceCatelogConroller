@@ -1,0 +1,48 @@
+package com.hashedin.huspark.controller;
+
+import com.hashedin.huspark.model.ServiceCategory;
+import com.hashedin.huspark.model.ServiceItem;
+import com.hashedin.huspark.service.ServiceCatalogService;
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+import java.util.List;
+
+@RestController
+@RequestMapping("/api/services")
+@RequiredArgsConstructor
+public class ServiceCatalogController {
+
+    private final ServiceCatalogService serviceCatalogService;
+
+    // Admin: Create new category
+    @PostMapping("/categories")
+    public ResponseEntity<ServiceCategory> createCategory(@RequestBody ServiceCategory category) {
+        return ResponseEntity.ok(serviceCatalogService.createCategory(category));
+    }
+
+    // Admin: Create new service under category
+    @PostMapping("/categories/{categoryId}/items")
+    public ResponseEntity<ServiceItem> createService(@PathVariable Long categoryId,
+                                                     @RequestBody ServiceItem service) {
+        return ResponseEntity.ok(serviceCatalogService.createService(categoryId, service));
+    }
+
+    // Public: Get all categories
+    @GetMapping("/categories")
+    public ResponseEntity<List<ServiceCategory>> getAllCategories() {
+        return ResponseEntity.ok(serviceCatalogService.getAllCategories());
+    }
+
+    // Public: Get services in a category
+    @GetMapping("/categories/{categoryId}/items")
+    public ResponseEntity<List<ServiceItem>> getServicesByCategory(@PathVariable Long categoryId) {
+        return ResponseEntity.ok(serviceCatalogService.getServicesByCategory(categoryId));
+    }
+
+    // Public: Search services by name
+    @GetMapping("/search")
+    public ResponseEntity<List<ServiceItem>> searchServices(@RequestParam String keyword) {
+        return ResponseEntity.ok(serviceCatalogService.searchServices(keyword));
+    }
+}
