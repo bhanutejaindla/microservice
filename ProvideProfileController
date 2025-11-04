@@ -7,6 +7,7 @@ import com.hashedin.huspark.service.ProviderProfileService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -18,38 +19,55 @@ public class ProviderProfileController {
 
     private final ProviderProfileService providerProfileService;
 
-    // Provider creates/updates their profile
+    /**
+     * ✅ PROVIDER: Create or update their own profile
+     */
     @PostMapping("/profile")
     public ResponseEntity<ProviderProfile> createOrUpdateProfile(
-            @AuthenticationPrincipal User user,
+            @AuthenticationPrincipal UserDetails userDetails,
             @RequestBody ProviderProfileDTO dto) {
 
-        ProviderProfile profile = providerProfileService.createOrUpdateProfile(user, dto);
+        String email = userDetails.getUsername();
+        ProviderProfile profile = providerProfileService.createOrUpdateProfile(email, dto);
         return ResponseEntity.ok(profile);
     }
 
-    // Get logged-in provider's profile
+    /**
+     * ✅ PROVIDER: Get their own profile
+     */
     @GetMapping("/profile")
-    public ResponseEntity<ProviderProfile> getMyProfile(@AuthenticationPrincipal User user) {
-        return ResponseEntity.ok(providerProfileService.getProfileByUser(user));
+    public ResponseEntity<ProviderProfile> getMyProfile(@AuthenticationPrincipal UserDetails userDetails) {
+        String email = userDetails.getUsername();
+        ProviderProfile profile = providerProfileService.getProfileByEmail(email);
+        return ResponseEntity.ok(profile);
     }
 
-    // Admin: Get all provider profiles
+    /**
+     * ✅ ADMIN: View all provider profiles
+     */
     @GetMapping("/admin/all")
     public ResponseEntity<List<ProviderProfile>> getAllProfiles() {
         return ResponseEntity.ok(providerProfileService.getAllProfiles());
     }
 
-    // Admin: Approve provider
+    /**
+     * ✅ ADMIN: Approve provider profile
+     */
     @PutMapping("/admin/{id}/approve")
     public ResponseEntity<ProviderProfile> approveProvider(@PathVariable Long id) {
-        return ResponseEntity.ok(providerProfileService.approveProvider(id));
+        ProviderProfile approved = providerProfileService.approveProvider(id);
+        return ResponseEntity.ok(approved);
     }
 
-    // Admin: Block/unblock provider
+    /**
+     * ✅ ADMIN: Block or unblock provider
+     */
     @PutMapping("/admin/{id}/block")
-    public ResponseEntity<ProviderProfile> blockProvider(@PathVariable Long id,
-                                                         @RequestParam boolean block) {
-        return ResponseEntity.ok(providerProfileService.blockProvider(id, block));
+    public ResponseEntity<ProviderProfile> blockProvider(
+            @PathVariable Long id,
+            @RequestParam boolean block) {
+
+        ProviderProfile updated = providerProfileService.blockProvider(id, block);
+        return ResponseEntity.ok(updated);
     }
 }
