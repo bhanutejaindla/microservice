@@ -1,0 +1,29 @@
+package com.hashedin.huspark.model;
+
+import jakarta.persistence.*;
+import lombok.*;
+import java.math.BigDecimal;
+
+@Entity
+@Table(name = "services")
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
+public class ServiceItem {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @Column(nullable = false)
+    private String title; // e.g., "AC Repair"
+
+    private String description;
+
+    @ManyToOne(optional = false)
+    @JoinColumn(name = "category_id")
+    private ServiceCategory category;
+
+    @Column(nullable = false)
+    private BigDecimal basePrice;
+}
