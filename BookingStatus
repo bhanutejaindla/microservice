@@ -1,0 +1,8 @@
+package com.hashedin.huspark.model.enums;
+
+public enum BookingStatus {
+    PENDING,
+    CONFIRMED,
+    COMPLETED,
+    CANCELLED
+}
