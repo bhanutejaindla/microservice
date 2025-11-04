@@ -1,0 +1,30 @@
+package com.hashedin.huspark.model;
+
+import jakarta.persistence.*;
+import lombok.*;
+
+@Entity
+@Table(name = "provider_profiles")
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
+public class ProviderProfile {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @OneToOne
+    @JoinColumn(name = "user_id", unique = true, nullable = false)
+    private User user;  // Linked to provider user
+
+    private String bio;
+    private String address;
+    private String city;
+    private boolean approved = false;  // Admin approval
+    private boolean blocked = false;
+
+    private Double rating;       // Average rating
+    private Integer totalReviews; // Review count
+}
