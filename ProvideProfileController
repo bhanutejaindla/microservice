@@ -1,0 +1,55 @@
+package com.hashedin.huspark.controller;
+
+import com.hashedin.huspark.dto.ProviderProfileDTO;
+import com.hashedin.huspark.model.ProviderProfile;
+import com.hashedin.huspark.model.User;
+import com.hashedin.huspark.service.ProviderProfileService;
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+
+@RestController
+@RequestMapping("/api/providers")
+@RequiredArgsConstructor
+public class ProviderProfileController {
+
+    private final ProviderProfileService providerProfileService;
+
+    // Provider creates/updates their profile
+    @PostMapping("/profile")
+    public ResponseEntity<ProviderProfile> createOrUpdateProfile(
+            @AuthenticationPrincipal User user,
+            @RequestBody ProviderProfileDTO dto) {
+
+        ProviderProfile profile = providerProfileService.createOrUpdateProfile(user, dto);
+        return ResponseEntity.ok(profile);
+    }
+
+    // Get logged-in provider's profile
+    @GetMapping("/profile")
+    public ResponseEntity<ProviderProfile> getMyProfile(@AuthenticationPrincipal User user) {
+        return ResponseEntity.ok(providerProfileService.getProfileByUser(user));
+    }
+
+    // Admin: Get all provider profiles
+    @GetMapping("/admin/all")
+    public ResponseEntity<List<ProviderProfile>> getAllProfiles() {
+        return ResponseEntity.ok(providerProfileService.getAllProfiles());
+    }
+
+    // Admin: Approve provider
+    @PutMapping("/admin/{id}/approve")
+    public ResponseEntity<ProviderProfile> approveProvider(@PathVariable Long id) {
+        return ResponseEntity.ok(providerProfileService.approveProvider(id));
+    }
+
+    // Admin: Block/unblock provider
+    @PutMapping("/admin/{id}/block")
+    public ResponseEntity<ProviderProfile> blockProvider(@PathVariable Long id,
+                                                         @RequestParam boolean block) {
+        return ResponseEntity.ok(providerProfileService.blockProvider(id, block));
+    }
+}
