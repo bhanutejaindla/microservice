@@ -1,0 +1,19 @@
+com.hashedin.huspark
+│
+├── controller
+│   └── ProviderProfileController.java
+│
+├── service
+│   ├── ProviderProfileService.java
+│   └── impl
+│       └── ProviderProfileServiceImpl.java
+│
+├── repository
+│   └── ProviderProfileRepository.java
+│
+├── model
+│   └── ProviderProfile.java
+│   └── User.java
+│
+└── dto
+    └── ProviderProfileDTO.java
