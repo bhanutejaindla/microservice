@@ -1,0 +1,2 @@
+jwt.secret=mySuperSecretKeyForJwtSigning_ThisIsAVeryLongSecureKey_1234567890_ABCDEFGHIJKLMNOPQRSTUVWXYZ
+jwt.expiration=86400000
