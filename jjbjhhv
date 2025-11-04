@@ -1,0 +1,80 @@
+package com.hashedin.huspark.security;
+
+import com.hashedin.huspark.security.jwt.JwtProvider;
+import com.hashedin.huspark.security.service.CustomUserDetailsService;
+import jakarta.servlet.FilterChain;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
+import org.springframework.stereotype.Component;
+import org.springframework.web.filter.OncePerRequestFilter;
+
+import java.io.IOException;
+import java.util.List;
+import java.util.stream.Collectors;
+
+@Component
+public class JwtAuthenticationFilter extends OncePerRequestFilter {
+
+    @Autowired
+    private JwtProvider jwtProvider;
+
+    @Autowired
+    private CustomUserDetailsService userDetailsService;
+
+    @Override
+    protected void doFilterInternal(HttpServletRequest request,
+                                    HttpServletResponse response,
+                                    FilterChain filterChain)
+            throws ServletException, IOException {
+
+        // Read Authorization header
+        String header = request.getHeader("Authorization");
+
+        if (header != null && header.startsWith("Bearer ")) {
+            String token = header.substring(7);
+
+            if (jwtProvider.validateToken(token)) {
+                String username = jwtProvider.getUsernameFromToken(token);
+
+                // ✅ Read roles from JWT (your token uses "roles")
+                List<String> roles = jwtProvider.getRolesFromToken(token);
+
+                // Load user details (to verify user existence)
+                UserDetails userDetails = userDetailsService.loadUserByUsername(username);
+
+                // Convert roles to GrantedAuthority list
+                List<GrantedAuthority> authorities = roles.stream()
+                        .map(SimpleGrantedAuthority::new)
+                        .collect(Collectors.toList());
+
+                // Build Authentication object
+                UsernamePasswordAuthenticationToken authentication =
+                        new UsernamePasswordAuthenticationToken(
+                                userDetails, null, authorities);
+
+                authentication.setDetails(
+                        new WebAuthenticationDetailsSource().buildDetails(request));
+
+                // ✅ Store authentication in context
+                SecurityContextHolder.getContext().setAuthentication(authentication);
+
+                System.out.println("✅ Authenticated " + username + " with roles: " + roles);
+            } else {
+                System.out.println("❌ Invalid JWT token");
+            }
+        } else {
+            // No token — continue unauthenticated
+            // System.out.println("No Authorization header found");
+        }
+
+        filterChain.doFilter(request, response);
+    }
+}
