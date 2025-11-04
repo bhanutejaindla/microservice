@@ -1,0 +1,73 @@
+package com.hashedin.huspark.controller;
+
+import com.hashedin.huspark.dto.BookingRequestDTO;
+import com.hashedin.huspark.dto.BookingResponseDTO;
+import com.hashedin.huspark.model.enums.BookingStatus;
+import com.hashedin.huspark.service.BookingService;
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+
+@RestController
+@RequestMapping("/api/bookings")
+@RequiredArgsConstructor
+public class BookingController {
+
+    private final BookingService bookingService;
+
+    // ✅ 1. Customer creates a booking
+    @PostMapping
+    public ResponseEntity<BookingResponseDTO> createBooking(
+            @RequestBody BookingRequestDTO request,
+            Authentication authentication) {
+
+        String customerEmail = authentication.getName();
+        BookingResponseDTO response = bookingService.createBooking(customerEmail, request);
+        return ResponseEntity.ok(response);
+    }
+
+    // ✅ 2. Customer fetches their bookings
+    @GetMapping("/my")
+    public ResponseEntity<List<BookingResponseDTO>> getMyBookings(Authentication authentication) {
+        String email = authentication.getName();
+        return ResponseEntity.ok(bookingService.getBookingsForCustomer(email));
+    }
+
+    // ✅ 3. Provider fetches all bookings assigned to them
+    @GetMapping("/provider/{providerId}")
+    public ResponseEntity<List<BookingResponseDTO>> getProviderBookings(@PathVariable Long providerId) {
+        return ResponseEntity.ok(bookingService.getBookingsForProvider(providerId));
+    }
+
+    // ✅ 4. Get single booking by ID
+    @GetMapping("/{id}")
+    public ResponseEntity<BookingResponseDTO> getBookingById(@PathVariable Long id) {
+        return ResponseEntity.ok(bookingService.getBookingById(id));
+    }
+
+    // ✅ 5. Provider/Admin updates booking status (ACCEPTED, COMPLETED, etc.)
+    @PutMapping("/{id}/status")
+    public ResponseEntity<BookingResponseDTO> updateBookingStatus(
+            @PathVariable Long id,
+            @RequestParam BookingStatus status,
+            Authentication authentication) {
+
+        String actorEmail = authentication.getName();
+        BookingResponseDTO updated = bookingService.updateBookingStatus(id, status, actorEmail);
+        return ResponseEntity.ok(updated);
+    }
+
+    // ✅ 6. Cancel booking (customer/provider)
+    @PutMapping("/{id}/cancel")
+    public ResponseEntity<BookingResponseDTO> cancelBooking(
+            @PathVariable Long id,
+            Authentication authentication) {
+
+        String actorEmail = authentication.getName();
+        BookingResponseDTO cancelled = bookingService.cancelBooking(id, actorEmail);
+        return ResponseEntity.ok(cancelled);
+    }
+}
