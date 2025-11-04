@@ -1,10 +1,10 @@
-package com.hashedin.huspark.service.impl;
+package com.hashedin.huspark.service;
 
 import com.hashedin.huspark.dto.ProviderProfileDTO;
 import com.hashedin.huspark.model.ProviderProfile;
 import com.hashedin.huspark.model.User;
 import com.hashedin.huspark.repository.ProviderProfileRepository;
-import com.hashedin.huspark.service.ProviderProfileService;
+import com.hashedin.huspark.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -12,51 +12,51 @@ import java.util.List;
 
 @Service
 @RequiredArgsConstructor
-public class ProviderProfileServiceImpl implements ProviderProfileService {
+public class ProviderProfileService {
 
     private final ProviderProfileRepository providerProfileRepository;
+    private final UserRepository userRepository;
 
-    @Override
-    public ProviderProfile createOrUpdateProfile(User user, ProviderProfileDTO profileDTO) {
+    public ProviderProfile createOrUpdateProfile(String email, ProviderProfileDTO dto) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
         ProviderProfile profile = providerProfileRepository.findByUser(user)
-                .orElse(ProviderProfile.builder()
-                        .user(user)
-                        .approved(false)
-                        .blocked(false)
-                        .rating(0.0)
-                        .totalReviews(0)
-                        .build());
+                .orElse(ProviderProfile.builder().user(user).build());
 
-        profile.setBio(profileDTO.getBio());
-        profile.setAddress(profileDTO.getAddress());
-        profile.setCity(profileDTO.getCity());
+        profile.setBio(dto.getBio());
+        profile.setAddress(dto.getAddress());
+        profile.setCity(dto.getCity());
+        profile.setApproved(false);
+        profile.setBlocked(false);
 
         return providerProfileRepository.save(profile);
     }
 
-    @Override
-    public ProviderProfile getProfileByUser(User user) {
+    public ProviderProfile getProfileByEmail(String email) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
         return providerProfileRepository.findByUser(user)
-                .orElseThrow(() -> new RuntimeException("Provider profile not found for user: " + user.getEmail()));
+                .orElseThrow(() -> new RuntimeException("Profile not found"));
     }
 
-    @Override
     public List<ProviderProfile> getAllProfiles() {
         return providerProfileRepository.findAll();
     }
 
-    @Override
     public ProviderProfile approveProvider(Long id) {
         ProviderProfile profile = providerProfileRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Provider not found"));
+                .orElseThrow(() -> new RuntimeException("Profile not found"));
+
         profile.setApproved(true);
         return providerProfileRepository.save(profile);
     }
 
-    @Override
     public ProviderProfile blockProvider(Long id, boolean block) {
         ProviderProfile profile = providerProfileRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Provider not found"));
+                .orElseThrow(() -> new RuntimeException("Profile not found"));
+
         profile.setBlocked(block);
         return providerProfileRepository.save(profile);
     }
