@@ -2,19 +2,12 @@ package com.hashedin.huspark.service.impl;
 
 import com.hashedin.huspark.dto.BookingRequestDTO;
 import com.hashedin.huspark.dto.BookingResponseDTO;
-import com.hashedin.huspark.model.Booking;
-import com.hashedin.huspark.model.ProviderProfile;
-import com.hashedin.huspark.model.ServiceItem;
-import com.hashedin.huspark.model.User;
+import com.hashedin.huspark.model.*;
 import com.hashedin.huspark.model.enums.BookingStatus;
-import com.hashedin.huspark.repository.BookingRepository;
-import com.hashedin.huspark.repository.ProviderProfileRepository;
-import com.hashedin.huspark.repository.ServiceItemRepository;
-import com.hashedin.huspark.repository.UserRepository;
+import com.hashedin.huspark.repository.*;
 import com.hashedin.huspark.service.BookingService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -30,115 +23,83 @@ public class BookingServiceImpl implements BookingService {
     private final ServiceItemRepository serviceItemRepository;
 
     @Override
-    @Transactional
-    public BookingResponseDTO createBooking(String customerEmail, BookingRequestDTO request) {
+    public BookingResponseDTO createBooking(String customerEmail, BookingRequestDTO dto) {
         User customer = userRepository.findByEmail(customerEmail)
                 .orElseThrow(() -> new RuntimeException("Customer not found"));
 
-        ProviderProfile provider = providerProfileRepository.findById(request.getProviderId())
+        ProviderProfile provider = providerProfileRepository.findById(dto.getProviderId())
                 .orElseThrow(() -> new RuntimeException("Provider not found"));
 
-        if (provider.isBlocked() || !provider.isApproved()) {
-            throw new RuntimeException("Provider not available for booking");
-        }
-
-        ServiceItem service = serviceItemRepository.findById(request.getServiceId())
+        ServiceItem service = serviceItemRepository.findById(dto.getServiceId())
                 .orElseThrow(() -> new RuntimeException("Service not found"));
-
-        // Basic overlap check (you can extend with time-slot logic)
-        List<Booking> overlapping = bookingRepository.findByProvider(provider).stream()
-                .filter(b -> b.getScheduledAt() != null && request.getScheduledAt() != null &&
-                        b.getScheduledAt().equals(request.getScheduledAt()) &&
-                        b.getStatus() != BookingStatus.CANCELLED)
-                .collect(Collectors.toList());
-        if (!overlapping.isEmpty()) {
-            throw new RuntimeException("Selected timeslot is not available");
-        }
 
         Booking booking = Booking.builder()
                 .customer(customer)
                 .provider(provider)
                 .service(service)
-                .scheduledAt(request.getScheduledAt())
+                .scheduledAt(dto.getScheduledAt())
                 .createdAt(LocalDateTime.now())
                 .updatedAt(LocalDateTime.now())
                 .status(BookingStatus.PENDING)
-                .amount(request.getAmount() != null ? request.getAmount() : service.getBasePrice() != null ? service.getBasePrice() : null)
-                .address(request.getAddress())
-                .notes(request.getNotes())
+                .amount(dto.getAmount())
+                .address(dto.getAddress())
+                .notes(dto.getNotes())
                 .build();
 
-        Booking saved = bookingRepository.save(booking);
-        return toDto(saved);
+        bookingRepository.save(booking);
+        return mapToResponse(booking);
     }
 
     @Override
-    public List<BookingResponseDTO> getBookingsForCustomer(String customerEmail) {
+    public List<BookingResponseDTO> getCustomerBookings(String customerEmail) {
         User customer = userRepository.findByEmail(customerEmail)
                 .orElseThrow(() -> new RuntimeException("Customer not found"));
-
         return bookingRepository.findByCustomer(customer).stream()
-                .map(this::toDto)
+                .map(this::mapToResponse)
                 .collect(Collectors.toList());
     }
 
     @Override
-    public List<BookingResponseDTO> getBookingsForProvider(Long providerProfileId) {
-        ProviderProfile provider = providerProfileRepository.findById(providerProfileId)
-                .orElseThrow(() -> new RuntimeException("Provider not found"));
-
+    public List<BookingResponseDTO> getProviderBookings(String providerEmail) {
+        User providerUser = userRepository.findByEmail(providerEmail)
+                .orElseThrow(() -> new RuntimeException("Provider user not found"));
+        ProviderProfile provider = providerProfileRepository.findByUser(providerUser)
+                .orElseThrow(() -> new RuntimeException("Provider profile not found"));
         return bookingRepository.findByProvider(provider).stream()
-                .map(this::toDto)
+                .map(this::mapToResponse)
                 .collect(Collectors.toList());
     }
 
     @Override
-    public BookingResponseDTO getBookingById(Long bookingId) {
-        Booking b = bookingRepository.findById(bookingId)
-                .orElseThrow(() -> new RuntimeException("Booking not found"));
-        return toDto(b);
-    }
-
-    @Override
-    @Transactional
-    public BookingResponseDTO updateBookingStatus(Long bookingId, BookingStatus newStatus, String actorEmail) {
+    public BookingResponseDTO updateStatus(Long bookingId, String status) {
         Booking booking = bookingRepository.findById(bookingId)
                 .orElseThrow(() -> new RuntimeException("Booking not found"));
 
-        // Basic ACL: allow provider (owner) or admin to change status; customers may cancel
-        // (you can expand checks: actor role, timeslots, refunds, etc.)
-        booking.setStatus(newStatus);
+        booking.setStatus(BookingStatus.valueOf(status.toUpperCase()));
         booking.setUpdatedAt(LocalDateTime.now());
         bookingRepository.save(booking);
-
-        return toDto(booking);
+        return mapToResponse(booking);
     }
 
     @Override
-    @Transactional
-    public BookingResponseDTO cancelBooking(Long bookingId, String actorEmail) {
-        Booking booking = bookingRepository.findById(bookingId)
-                .orElseThrow(() -> new RuntimeException("Booking not found"));
-
-        // allow customer or provider or admin to cancel (detailed checks omitted)
-        booking.setStatus(BookingStatus.CANCELLED);
-        booking.setUpdatedAt(LocalDateTime.now());
-        bookingRepository.save(booking);
-
-        return toDto(booking);
+    public List<BookingResponseDTO> getAllBookings() {
+        return bookingRepository.findAll().stream()
+                .map(this::mapToResponse)
+                .collect(Collectors.toList());
     }
 
-    // --- Mapper helper ---
-    private BookingResponseDTO toDto(Booking b) {
+    private BookingResponseDTO mapToResponse(Booking booking) {
         return BookingResponseDTO.builder()
-                .id(b.getId())
-                .customerEmail(b.getCustomer() != null ? b.getCustomer().getEmail() : null)
-                .providerName(b.getProvider() != null && b.getProvider().getUser() != null ? b.getProvider().getUser().getName() : null)
-                .serviceTitle(b.getService() != null ? b.getService().getTitle() : null)
-                .scheduledAt(b.getScheduledAt())
-                .status(b.getStatus())
-                .amount(b.getAmount())
-                .address(b.getAddress())
+                .bookingId(booking.getId())
+                .customerEmail(booking.getCustomer().getEmail())
+                .providerEmail(booking.getProvider().getUser().getEmail())
+                .serviceTitle(booking.getService().getTitle())
+                .scheduledAt(booking.getScheduledAt())
+                .status(booking.getStatus())
+                .amount(booking.getAmount())
+                .address(booking.getAddress())
+                .notes(booking.getNotes())
+                .createdAt(booking.getCreatedAt())
                 .build();
     }
 }
