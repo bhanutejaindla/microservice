@@ -1,0 +1,15 @@
+package com.hashedin.huspark.service;
+
+import com.hashedin.huspark.dto.ProviderProfileDTO;
+import com.hashedin.huspark.model.ProviderProfile;
+import com.hashedin.huspark.model.User;
+
+import java.util.List;
+
+public interface ProviderProfileService {
+    ProviderProfile createOrUpdateProfile(User user, ProviderProfileDTO profileDTO);
+    ProviderProfile getProfileByUser(User user);
+    List<ProviderProfile> getAllProfiles();
+    ProviderProfile approveProvider(Long id);
+    ProviderProfile blockProvider(Long id, boolean block);
+}
