@@ -1,13 +1,13 @@
 package com.hashedin.huspark.service;
 
-import com.hashedin.huspark.dto.BookingDTO;
-import com.hashedin.huspark.model.Booking;
+import com.hashedin.huspark.dto.BookingRequestDTO;
+import com.hashedin.huspark.dto.BookingResponseDTO;
 import java.util.List;
 
 public interface BookingService {
-    Booking createBooking(String customerEmail, BookingDTO dto);
-    List<Booking> getCustomerBookings(String customerEmail);
-    List<Booking> getProviderBookings(String providerEmail);
-    Booking updateStatus(Long bookingId, String status);
-    List<Booking> getAllBookings();
+    BookingResponseDTO createBooking(String customerEmail, BookingRequestDTO dto);
+    List<BookingResponseDTO> getCustomerBookings(String customerEmail);
+    List<BookingResponseDTO> getProviderBookings(String providerEmail);
+    BookingResponseDTO updateStatus(Long bookingId, String status);
+    List<BookingResponseDTO> getAllBookings();
 }
