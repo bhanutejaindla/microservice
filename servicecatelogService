@@ -1,0 +1,49 @@
+package com.hashedin.huspark.service.impl;
+
+import com.hashedin.huspark.model.ServiceCategory;
+import com.hashedin.huspark.model.ServiceItem;
+import com.hashedin.huspark.repository.ServiceCategoryRepository;
+import com.hashedin.huspark.repository.ServiceItemRepository;
+import com.hashedin.huspark.service.ServiceCatalogService;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Service;
+
+import java.util.List;
+
+@Service
+@RequiredArgsConstructor
+public class ServiceCatalogServiceImpl implements ServiceCatalogService {
+
+    private final ServiceCategoryRepository categoryRepository;
+    private final ServiceItemRepository itemRepository;
+
+    @Override
+    public ServiceCategory createCategory(ServiceCategory category) {
+        return categoryRepository.save(category);
+    }
+
+    @Override
+    public ServiceItem createService(Long categoryId, ServiceItem service) {
+        ServiceCategory category = categoryRepository.findById(categoryId)
+                .orElseThrow(() -> new RuntimeException("Category not found"));
+        service.setCategory(category);
+        return itemRepository.save(service);
+    }
+
+    @Override
+    public List<ServiceCategory> getAllCategories() {
+        return categoryRepository.findAll();
+    }
+
+    @Override
+    public List<ServiceItem> getServicesByCategory(Long categoryId) {
+        ServiceCategory category = categoryRepository.findById(categoryId)
+                .orElseThrow(() -> new RuntimeException("Category not found"));
+        return itemRepository.findByCategory(category);
+    }
+
+    @Override
+    public List<ServiceItem> searchServices(String keyword) {
+        return itemRepository.findByTitleContainingIgnoreCase(keyword);
+    }
+}
