@@ -1,118 +1,84 @@
-package com.hashedin.huspark.service.impl;
+package com.hashedin.huspark.controller;
 
 import com.hashedin.huspark.dto.BookingRequestDTO;
 import com.hashedin.huspark.dto.BookingResponseDTO;
-import com.hashedin.huspark.model.*;
 import com.hashedin.huspark.model.enums.BookingStatus;
-import com.hashedin.huspark.repository.BookingRepository;
-import com.hashedin.huspark.repository.ProviderProfileRepository;
-import com.hashedin.huspark.repository.ServiceItemRepository;
-import com.hashedin.huspark.repository.UserRepository;
 import com.hashedin.huspark.service.BookingService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.web.bind.annotation.*;
 
-import java.time.LocalDateTime;
 import java.util.List;
-import java.util.stream.Collectors;
 
-@Service
+@RestController
+@RequestMapping("/api/bookings")
 @RequiredArgsConstructor
-@Transactional
-public class BookingServiceImpl implements BookingService {
+public class BookingController {
 
-    private final BookingRepository bookingRepository;
-    private final UserRepository userRepository;
-    private final ProviderProfileRepository providerProfileRepository;
-    private final ServiceItemRepository serviceItemRepository;
+    private final BookingService bookingService;
 
-    @Override
-    public BookingResponseDTO createBooking(String customerEmail, BookingRequestDTO request) {
-        User customer = userRepository.findByEmail(customerEmail)
-                .orElseThrow(() -> new RuntimeException("Customer not found"));
-
-        ProviderProfile provider = providerProfileRepository.findById(request.getProviderId())
-                .orElseThrow(() -> new RuntimeException("Provider not found"));
-
-        ServiceItem service = serviceItemRepository.findById(request.getServiceId())
-                .orElseThrow(() -> new RuntimeException("Service not found"));
-
-        Booking booking = Booking.builder()
-                .customer(customer)
-                .provider(provider)
-                .service(service)
-                .scheduledAt(request.getScheduledAt())
-                .createdAt(LocalDateTime.now())
-                .updatedAt(LocalDateTime.now())
-                .status(BookingStatus.PENDING)
-                .amount(request.getAmount())
-                .address(request.getAddress())
-                .notes(request.getNotes())
-                .build();
-
-        return mapToResponse(bookingRepository.save(booking));
+    /**
+     * Customer creates a booking
+     */
+    @PostMapping
+    public ResponseEntity<BookingResponseDTO> createBooking(
+            @RequestBody BookingRequestDTO request,
+            Authentication authentication) {
+        String email = authentication.getName();
+        BookingResponseDTO response = bookingService.createBooking(email, request);
+        return ResponseEntity.ok(response);
     }
 
-    @Override
-    public List<BookingResponseDTO> getBookingsForCustomer(String email) {
-        User customer = userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("Customer not found"));
-        return bookingRepository.findByCustomer(customer)
-                .stream()
-                .map(this::mapToResponse)
-                .collect(Collectors.toList());
+    /**
+     * Customer fetches their bookings
+     */
+    @GetMapping("/my")
+    public ResponseEntity<List<BookingResponseDTO>> getCustomerBookings(Authentication authentication) {
+        String email = authentication.getName();
+        List<BookingResponseDTO> bookings = bookingService.getBookingsForCustomer(email);
+        return ResponseEntity.ok(bookings);
     }
 
-    @Override
-    public List<BookingResponseDTO> getBookingsForProvider(Long providerId) {
-        ProviderProfile provider = providerProfileRepository.findById(providerId)
-                .orElseThrow(() -> new RuntimeException("Provider not found"));
-        return bookingRepository.findByProvider(provider)
-                .stream()
-                .map(this::mapToResponse)
-                .collect(Collectors.toList());
+    /**
+     * Provider fetches their bookings
+     */
+    @GetMapping("/provider/{providerId}")
+    public ResponseEntity<List<BookingResponseDTO>> getProviderBookings(@PathVariable Long providerId) {
+        List<BookingResponseDTO> bookings = bookingService.getBookingsForProvider(providerId);
+        return ResponseEntity.ok(bookings);
     }
 
-    @Override
-    public BookingResponseDTO getBookingById(Long id) {
-        Booking booking = bookingRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Booking not found"));
-        return mapToResponse(booking);
+    /**
+     * Get booking details by ID
+     */
+    @GetMapping("/{id}")
+    public ResponseEntity<BookingResponseDTO> getBookingById(@PathVariable Long id) {
+        return ResponseEntity.ok(bookingService.getBookingById(id));
     }
 
-    @Override
-    public BookingResponseDTO updateBookingStatus(Long id, BookingStatus status, String actorEmail) {
-        Booking booking = bookingRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Booking not found"));
-
-        booking.setStatus(status);
-        booking.setUpdatedAt(LocalDateTime.now());
-        return mapToResponse(bookingRepository.save(booking));
+    /**
+     * Provider or Admin updates booking status
+     */
+    @PutMapping("/{id}/status")
+    public ResponseEntity<BookingResponseDTO> updateBookingStatus(
+            @PathVariable Long id,
+            @RequestParam BookingStatus status,
+            Authentication authentication) {
+        String email = authentication.getName();
+        BookingResponseDTO updated = bookingService.updateBookingStatus(id, status, email);
+        return ResponseEntity.ok(updated);
     }
 
-    @Override
-    public BookingResponseDTO cancelBooking(Long id, String actorEmail) {
-        Booking booking = bookingRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Booking not found"));
-
-        booking.setStatus(BookingStatus.CANCELLED);
-        booking.setUpdatedAt(LocalDateTime.now());
-        return mapToResponse(bookingRepository.save(booking));
-    }
-
-    private BookingResponseDTO mapToResponse(Booking booking) {
-        return BookingResponseDTO.builder()
-                .bookingId(booking.getId())
-                .customerEmail(booking.getCustomer().getEmail())
-                .providerEmail(booking.getProvider().getUser().getEmail())
-                .serviceTitle(booking.getService().getTitle())
-                .scheduledAt(booking.getScheduledAt())
-                .status(booking.getStatus())
-                .amount(booking.getAmount())
-                .address(booking.getAddress())
-                .notes(booking.getNotes())
-                .createdAt(booking.getCreatedAt())
-                .build();
+    /**
+     * Customer cancels booking
+     */
+    @PutMapping("/{id}/cancel")
+    public ResponseEntity<BookingResponseDTO> cancelBooking(
+            @PathVariable Long id,
+            Authentication authentication) {
+        String email = authentication.getName();
+        BookingResponseDTO cancelled = bookingService.cancelBooking(id, email);
+        return ResponseEntity.ok(cancelled);
     }
 }
