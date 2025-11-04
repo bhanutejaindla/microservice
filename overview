@@ -1,0 +1,27 @@
+src/main/java/com/hashedin/huspark/
+│
+├── model/
+│   ├── ServiceCategory.java
+│   ├── ServiceItem.java
+│   ├── ProviderProfile.java
+│   ├── ProviderService.java
+│   ├── Booking.java
+│   ├── enums/
+│   │   ├── BookingStatus.java
+│
+├── repository/
+│   ├── ServiceCategoryRepository.java
+│   ├── ServiceItemRepository.java
+│   ├── ProviderProfileRepository.java
+│   ├── ProviderServiceRepository.java
+│   ├── BookingRepository.java
+│
+├── service/
+│   ├── ServiceCatalogService.java
+│   ├── ProviderServiceManager.java
+│   ├── BookingService.java
+│
+└── controller/
+    ├── ServiceCatalogController.java
+    ├── ProviderController.java
+    ├── BookingController.java
