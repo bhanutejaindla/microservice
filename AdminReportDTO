@@ -1,0 +1,14 @@
+package com.hashedin.huspark.dto;
+
+import lombok.Builder;
+import lombok.Data;
+
+@Data
+@Builder
+public class AdminReportDTO {
+    private long totalUsers;
+    private long totalProviders;
+    private long totalBookings;
+    private String period; // e.g., "2025-10"
+    private double revenue; // total paid amount in period
+}
