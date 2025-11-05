@@ -1,0 +1,40 @@
+package com.hashedin.huspark.util;
+
+import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.databind.JsonSerializer;
+import com.fasterxml.jackson.databind.SerializerProvider;
+
+import java.io.IOException;
+
+public class MaskingSerializer extends JsonSerializer<String> {
+
+    @Override
+    public void serialize(String value, JsonGenerator gen, SerializerProvider serializers) throws IOException {
+        if (value == null) {
+            gen.writeNull();
+            return;
+        }
+
+        // Basic rules for masking email or phone
+        if (value.contains("@")) {
+            gen.writeString(maskEmail(value));
+        } else if (value.matches("\\d{10}|\\+\\d{12,13}")) {
+            gen.writeString(maskPhone(value));
+        } else {
+            gen.writeString(value);
+        }
+    }
+
+    private String maskEmail(String email) {
+        String[] parts = email.split("@");
+        String namePart = parts[0];
+        if (namePart.length() <= 2) return "*@" + parts[1];
+        int visible = Math.min(3, namePart.length() - 1);
+        return namePart.substring(0, visible) + "****@" + parts[1];
+    }
+
+    private String maskPhone(String phone) {
+        if (phone.length() < 4) return phone;
+        return "****" + phone.substring(phone.length() - 4);
+    }
+}
