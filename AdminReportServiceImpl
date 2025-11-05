@@ -1,0 +1,49 @@
+package com.hashedin.huspark.service.impl;
+
+import com.hashedin.huspark.dto.AdminReportDTO;
+import com.hashedin.huspark.repository.BookingRepository;
+import com.hashedin.huspark.repository.UserRepository;
+import com.hashedin.huspark.repository.ProviderProfileRepository;
+import com.hashedin.huspark.repository.PaymentRepository;
+import com.hashedin.huspark.service.AdminReportService;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Service;
+
+import java.time.LocalDate;
+import java.time.YearMonth;
+
+@Service
+@RequiredArgsConstructor
+public class AdminReportServiceImpl implements AdminReportService {
+
+    private final UserRepository userRepository;
+    private final ProviderProfileRepository providerRepo;
+    private final BookingRepository bookingRepository;
+    private final PaymentRepository paymentRepository;
+
+    @Override
+    public AdminReportDTO getSummaryReport(String yearMonth) {
+        YearMonth ym = YearMonth.parse(yearMonth); // expects "YYYY-MM"
+        LocalDate start = ym.atDay(1);
+        LocalDate end = ym.atEndOfMonth();
+
+        long totalUsers = userRepository.count();
+        long totalProviders = providerRepo.count();
+        long totalBookings = bookingRepository.count(); // or filter by date if needed
+
+        // revenue: sum of successful payments in that period
+        double revenue = paymentRepository.findAll().stream()
+                .filter(p -> p.getStatus() != null && p.getStatus().name().equals("SUCCESS"))
+                .filter(p -> !p.getPaidAt().toLocalDate().isBefore(start) && !p.getPaidAt().toLocalDate().isAfter(end))
+                .mapToDouble(p -> p.getAmount().doubleValue())
+                .sum();
+
+        return AdminReportDTO.builder()
+                .period(yearMonth)
+                .totalUsers(totalUsers)
+                .totalProviders(totalProviders)
+                .totalBookings(totalBookings)
+                .revenue(revenue)
+                .build();
+    }
+}
