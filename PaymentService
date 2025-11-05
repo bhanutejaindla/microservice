@@ -1,0 +1,59 @@
+package com.hashedin.huspark.service;
+
+import com.hashedin.huspark.dto.PaymentRequestDTO;
+import com.hashedin.huspark.dto.PaymentResponseDTO;
+import com.hashedin.huspark.model.Booking;
+import com.hashedin.huspark.model.Payment;
+import com.hashedin.huspark.model.enums.BookingStatus;
+import com.hashedin.huspark.model.enums.PaymentStatus;
+import com.hashedin.huspark.repository.BookingRepository;
+import com.hashedin.huspark.repository.PaymentRepository;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Service;
+
+import java.time.LocalDateTime;
+
+@Service
+@RequiredArgsConstructor
+@Slf4j
+public class PaymentService {
+
+    private final PaymentRepository paymentRepository;
+    private final BookingRepository bookingRepository;
+
+    public PaymentResponseDTO makePayment(PaymentRequestDTO request, String email) {
+        Booking booking = bookingRepository.findById(request.getBookingId())
+                .orElseThrow(() -> new RuntimeException("Booking not found"));
+
+        // Mock payment success
+        log.info("Payment initiated for booking: {}", booking.getId());
+        log.info("Processing mock payment of amount: {}", request.getAmount());
+
+        Payment payment = Payment.builder()
+                .booking(booking)
+                .amount(request.getAmount())
+                .paymentMethod(request.getPaymentMethod())
+                .status(PaymentStatus.SUCCESS)
+                .paidAt(LocalDateTime.now())
+                .build();
+
+        paymentRepository.save(payment);
+
+        // Update booking status to PAID
+        booking.setStatus(BookingStatus.PAID);
+        bookingRepository.save(booking);
+
+        log.info("✅ Payment successful for booking ID: {}", booking.getId());
+
+        return PaymentResponseDTO.builder()
+                .paymentId(payment.getId())
+                .bookingId(booking.getId())
+                .amount(payment.getAmount())
+                .paymentMethod(payment.getPaymentMethod())
+                .status(payment.getStatus())
+                .paidAt(payment.getPaidAt())
+                .message("Payment successful")
+                .build();
+    }
+}
