@@ -1,0 +1,42 @@
+package com.hashedin.huspark.repository;
+
+import com.hashedin.huspark.model.Booking;
+import com.hashedin.huspark.model.ProviderProfile;
+import com.hashedin.huspark.model.enums.BookingStatus;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
+import org.springframework.stereotype.Repository;
+
+import java.time.LocalDateTime;
+import java.util.List;
+
+@Repository
+public interface BookingRepository extends JpaRepository<Booking, Long> {
+
+    // ✅ Get all bookings for a specific provider within a date range (for monthly invoices)
+    @Query("SELECT b FROM Booking b WHERE b.provider = :provider AND b.status = :status " +
+           "AND b.scheduledAt BETWEEN :startDate AND :endDate")
+    List<Booking> findCompletedBookingsForProviderInMonth(
+            @Param("provider") ProviderProfile provider,
+            @Param("status") BookingStatus status,
+            @Param("startDate") LocalDateTime startDate,
+            @Param("endDate") LocalDateTime endDate
+    );
+
+    // ✅ For Admin Dashboard: Total revenue (sum of all completed bookings)
+    @Query("SELECT SUM(b.amount) FROM Booking b WHERE b.status = 'COMPLETED'")
+    Double getTotalRevenue();
+
+    // ✅ For Admin Dashboard: Count total bookings
+    @Query("SELECT COUNT(b) FROM Booking b")
+    Long getTotalBookings();
+
+    // ✅ For Admin Dashboard: Count completed bookings this month
+    @Query("SELECT COUNT(b) FROM Booking b WHERE b.status = 'COMPLETED' " +
+           "AND MONTH(b.scheduledAt) = MONTH(CURRENT_DATE) AND YEAR(b.scheduledAt) = YEAR(CURRENT_DATE)")
+    Long getCompletedBookingsThisMonth();
+
+    // ✅ For Admin Dashboard: Get bookings by provider
+    List<Booking> findByProvider(ProviderProfile provider);
+}
