@@ -1,0 +1,21 @@
+package com.hashedin.huspark.controller;
+
+import com.hashedin.huspark.dto.AdminReportDTO;
+import com.hashedin.huspark.service.AdminReportService;
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+@RestController
+@RequestMapping("/api/admin/report")
+@RequiredArgsConstructor
+public class AdminReportController {
+
+    private final AdminReportService adminReportService;
+
+    @GetMapping("/summary")
+    public ResponseEntity<AdminReportDTO> summary(@RequestParam String period) {
+        // period = "2025-10"
+        return ResponseEntity.ok(adminReportService.getSummaryReport(period));
+    }
+}
