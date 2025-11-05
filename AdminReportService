@@ -1,0 +1,7 @@
+package com.hashedin.huspark.service;
+
+import com.hashedin.huspark.dto.AdminReportDTO;
+
+public interface AdminReportService {
+    AdminReportDTO getSummaryReport(String yearMonth); // e.g., "2025-10"
+}
