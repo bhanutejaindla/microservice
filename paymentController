@@ -1,0 +1,26 @@
+package com.hashedin.huspark.controller;
+
+import com.hashedin.huspark.dto.PaymentRequestDTO;
+import com.hashedin.huspark.dto.PaymentResponseDTO;
+import com.hashedin.huspark.service.PaymentService;
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.web.bind.annotation.*;
+
+@RestController
+@RequestMapping("/api/payments")
+@RequiredArgsConstructor
+public class PaymentController {
+
+    private final PaymentService paymentService;
+
+    @PostMapping("/make")
+    public ResponseEntity<PaymentResponseDTO> makePayment(
+            @RequestBody PaymentRequestDTO request,
+            Authentication authentication) {
+        String email = authentication.getName();
+        PaymentResponseDTO response = paymentService.makePayment(request, email);
+        return ResponseEntity.ok(response);
+    }
+}
