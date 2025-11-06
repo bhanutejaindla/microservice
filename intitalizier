@@ -1,0 +1,20 @@
+import org.springframework.batch.core.repository.support.JobRepositoryFactoryBean;
+import org.springframework.batch.core.repository.support.MapJobRepositoryFactoryBean;
+import org.springframework.batch.support.DatabaseType;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import javax.sql.DataSource;
+
+@Configuration
+public class BatchSchemaInitializer {
+
+    @Bean
+    public JobRepositoryFactoryBean jobRepositoryFactory(DataSource dataSource) throws Exception {
+        JobRepositoryFactoryBean factory = new JobRepositoryFactoryBean();
+        factory.setDataSource(dataSource);
+        factory.setDatabaseType(DatabaseType.POSTGRES.name());
+        factory.setIsolationLevelForCreate("ISOLATION_SERIALIZABLE");
+        factory.afterPropertiesSet();
+        return factory;
+    }
+}
